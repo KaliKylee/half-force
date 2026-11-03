@@ -36,6 +36,8 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.Locale;
+
 /**
  * Pre-launcher do Half-Force: tela inicial com botao Play, links (GitHub, YouTube, Discord)
  * e uma janela "Apoie-me" com as carteiras de USDT.
@@ -69,6 +71,9 @@ public class MainActivity extends Activity {
     private static final int GREEN_DEEP = 0xFF1F5A38;  // bordas
 
     private static final String ACTION_MOD = "su.xash.engine.MOD";
+    private static final String PREFS = "half_force_settings";
+    private static final String PREF_LANGUAGE = "language";
+    private String language;
 
     // ---------------------------------------------------------------- ciclo de vida
     @Override
@@ -88,7 +93,56 @@ public class MainActivity extends Activity {
             w.setNavigationBarColor(BG);
         }
 
+        language = getSelectedLanguage();
         setContentView(buildUi());
+    }
+
+    private String getSelectedLanguage() {
+        String saved = getSharedPreferences(PREFS, MODE_PRIVATE).getString(PREF_LANGUAGE, "system");
+        if (!"system".equals(saved)) return saved;
+        String device = Locale.getDefault().getLanguage();
+        if ("pt".equals(device)) return "pt";
+        if ("es".equals(device)) return "es";
+        return "en";
+    }
+
+    private String s(String key) {
+        boolean pt = "pt".equals(language);
+        boolean es = "es".equals(language);
+        if ("play".equals(key)) return "PLAY";
+        if ("version".equals(key)) return pt ? "VERSÃO " + MOD_VERSION : (es ? "VERSIÓN " : "VERSION ") + MOD_VERSION;
+        if ("language".equals(key)) return pt ? "IDIOMA: PORTUGUÊS ▾" : (es ? "IDIOMA: ESPAÑOL ▾" : "LANGUAGE: ENGLISH ▾");
+        if ("support".equals(key)) return pt ? "APOIE-ME" : (es ? "APÓYAME" : "SUPPORT ME");
+        if ("credit".equals(key)) return "Port by Kali Kyle";
+        if ("engine_required".equals(key)) return pt ? "Requer o app Xash3D FWGS instalado" : (es ? "Requiere tener instalada la app Xash3D FWGS" : "Requires the Xash3D FWGS app to be installed");
+        if ("support_title".equals(key)) return pt ? "APOIE O PROJETO" : (es ? "APOYA EL PROYECTO" : "SUPPORT THE PROJECT");
+        if ("support_note".equals(key)) return pt ? "Envie somente USDT pela rede indicada e confira o endereço antes de enviar. Obrigado por apoiar!" : (es ? "Envía únicamente USDT por la red indicada y verifica la dirección antes de enviar. ¡Gracias por apoyar!" : "Send USDT only through the indicated network and check the address before sending. Thanks for your support!");
+        if ("copy".equals(key)) return pt ? "COPIAR" : (es ? "COPIAR" : "COPY");
+        if ("close".equals(key)) return pt ? "Fechar" : (es ? "Cerrar" : "Close");
+        if ("copied".equals(key)) return pt ? "Endereço copiado" : (es ? "Dirección copiada" : "Address copied");
+        if ("install_engine".equals(key)) return pt ? "Instale o Xash3D FWGS para jogar" : (es ? "Instala Xash3D FWGS para jugar" : "Install Xash3D FWGS to play");
+        if ("launch_error".equals(key)) return pt ? "Não foi possível abrir o Xash3D FWGS" : (es ? "No se pudo abrir Xash3D FWGS" : "Could not open Xash3D FWGS");
+        if ("no_link_app".equals(key)) return pt ? "Nenhum app para abrir o link" : (es ? "No hay ninguna app para abrir el enlace" : "No app available to open this link");
+        if ("choose_language".equals(key)) return pt ? "Escolha o idioma" : (es ? "Elige el idioma" : "Choose language");
+        if ("system_language".equals(key)) return pt ? "Automático (sistema)" : (es ? "Automático (sistema)" : "Automatic (system)");
+        return key;
+    }
+
+    private void showLanguageDialog() {
+        final String[] values = {"system", "pt", "en", "es"};
+        final String[] labels = {s("system_language"), "Português (Brasil)", "English", "Español"};
+        String selected = getSharedPreferences(PREFS, MODE_PRIVATE).getString(PREF_LANGUAGE, "system");
+        int checked = 0;
+        for (int i = 0; i < values.length; i++) if (values[i].equals(selected)) checked = i;
+        new AlertDialog.Builder(this)
+                .setTitle(s("choose_language"))
+                .setSingleChoiceItems(labels, checked, (dialog, which) -> {
+                    getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(PREF_LANGUAGE, values[which]).apply();
+                    dialog.dismiss();
+                    recreate();
+                })
+                .setNegativeButton(s("close"), null)
+                .show();
     }
 
     // ---------------------------------------------------------------- jogo
@@ -102,7 +156,7 @@ public class MainActivity extends Activity {
                 pkg = "su.xash.engine";
                 getPackageManager().getPackageInfo(pkg, 0);
             } catch (PackageManager.NameNotFoundException ex) {
-                Toast.makeText(this, "Instale o Xash3D FWGS para jogar", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, s("install_engine"), Toast.LENGTH_LONG).show();
                 openUrl(URL_ENGINE);
                 return;
             }
@@ -122,7 +176,7 @@ public class MainActivity extends Activity {
             startActivity(game);
             finish();
         } catch (ActivityNotFoundException e) {
-            Toast.makeText(this, "Nao foi possivel abrir o Xash3D FWGS", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, s("launch_error"), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -130,7 +184,7 @@ public class MainActivity extends Activity {
         try {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
         } catch (ActivityNotFoundException e) {
-            Toast.makeText(this, "Nenhum app para abrir o link", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, s("no_link_app"), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -178,12 +232,21 @@ public class MainActivity extends Activity {
         title.setGravity(Gravity.CENTER);
         col.addView(title, wrap());
 
-        TextView version = text("VERS\u00c3O " + MOD_VERSION, 15, GREEN, true);
+        TextView version = text(s("version"), 15, GREEN, true);
         version.setLetterSpacing(0.3f);
         version.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams vLp = wrap();
         vLp.topMargin = dp(2);
         col.addView(version, vLp);
+
+        TextView languageButton = text(s("language"), 11, GREEN, true);
+        languageButton.setGravity(Gravity.CENTER);
+        languageButton.setPadding(dp(14), dp(8), dp(14), dp(8));
+        languageButton.setBackground(ripple(box(PANEL, GREEN_DEEP, 1, 10)));
+        languageButton.setOnClickListener(v -> showLanguageDialog());
+        LinearLayout.LayoutParams languageLp = wrap();
+        languageLp.topMargin = dp(14);
+        col.addView(languageButton, languageLp);
 
         View line = new View(this);
         line.setBackgroundColor(GREEN_DEEP);
@@ -220,7 +283,7 @@ public class MainActivity extends Activity {
         row.addView(linkButton(new PolyIcon(DISCORD, GREEN, dp(30)), "Discord", URL_DISCORD), cell(true));
 
         // apoie-me
-        TextView support = text("APOIE-ME", 16, GREEN, true);
+        TextView support = text(s("support"), 16, GREEN, true);
         support.setLetterSpacing(0.2f);
         support.setGravity(Gravity.CENTER);
         support.setBackground(ripple(box(PANEL, GREEN_DEEP, 2, 14)));
@@ -242,7 +305,7 @@ public class MainActivity extends Activity {
         crLp.topMargin = dp(30);
         col.addView(credit, crLp);
 
-        TextView hint = text("Requer o app Xash3D FWGS instalado", 12, GREEN, false);
+        TextView hint = text(s("engine_required"), 12, GREEN, false);
         hint.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams hintLp = wrap();
         hintLp.topMargin = dp(4);
@@ -292,11 +355,11 @@ public class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(dp(20), dp(20), dp(20), dp(16));
 
-        TextView title = text("APOIE O PROJETO", 18, RED, true);
+        TextView title = text(s("support_title"), 18, RED, true);
         title.setLetterSpacing(0.15f);
         box.addView(title, wrap());
 
-        TextView note = text("Envie somente USDT pela rede indicada e confira o endere\u00e7o antes de enviar. Obrigado por apoiar!", 13, GREEN, false);
+        TextView note = text(s("support_note"), 13, GREEN, false);
         LinearLayout.LayoutParams noteLp = wrap();
         noteLp.topMargin = dp(8);
         noteLp.bottomMargin = dp(8);
@@ -320,7 +383,7 @@ public class MainActivity extends Activity {
             addrLp.topMargin = dp(6);
             card.addView(addr, addrLp);
 
-            TextView copy = text("COPIAR", 13, RED, true);
+            TextView copy = text(s("copy"), 13, RED, true);
             copy.setLetterSpacing(0.2f);
             copy.setGravity(Gravity.CENTER);
             copy.setBackground(ripple(box(0x00000000, RED, 2, 10)));
@@ -347,7 +410,7 @@ public class MainActivity extends Activity {
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(sv)
-                .setPositiveButton("Fechar", null)
+                .setPositiveButton(s("close"), null)
                 .create();
         dialog.getWindow().setBackgroundDrawable(box(BG, GREEN_DEEP, 2, 18));
         dialog.show();
@@ -358,7 +421,7 @@ public class MainActivity extends Activity {
         ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         if (cm != null) {
             cm.setPrimaryClip(ClipData.newPlainText(label, address));
-            Toast.makeText(this, "Endere\u00e7o copiado", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, s("copied"), Toast.LENGTH_SHORT).show();
         }
     }
 
