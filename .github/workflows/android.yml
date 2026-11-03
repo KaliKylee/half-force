@@ -1,0 +1,64 @@
+name: Build Half-Force (Android)
+
+on:
+  workflow_dispatch:
+  
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Baixar freevgui (mesma versao que o hlsdk-portable usa)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf freevgui
+          git clone https://github.com/FWGS/freevgui.git freevgui
+          # descobre qual commit do freevgui o hlsdk-portable (branch opfor, commit 0a58cc58) fixa
+          SHA=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/FWGS/hlsdk-portable/contents/freevgui?ref=0a58cc581f529eebab6f4fa9a2d9513572642446" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin).get('sha',''))")
+          echo "freevgui commit fixado: '$SHA'"
+          if [ -n "$SHA" ]; then git -C freevgui checkout "$SHA"; fi
+          git -C freevgui log -1 --format='usando freevgui %h de %cd'
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install NDK and CMake
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;26.1.10909125" "cmake;3.22.1" "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Build APK (launcher + libs)
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Collect native libs
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/debug/*.apk dist/ || true
+          # as .so geradas (server + client) para cada ABI
+          unzip -o -q dist/*.apk 'lib/*' -d dist/apk-libs || true
+          find dist/apk-libs -name '*.so' | sort
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalfForceLauncher-apk
+          path: dist/*.apk
+
+      - name: Upload native libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalfForce-libs
+          path: dist/apk-libs/lib
