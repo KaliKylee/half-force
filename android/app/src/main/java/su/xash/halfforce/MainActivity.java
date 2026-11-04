@@ -29,6 +29,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowInsets;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -36,18 +37,15 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.Locale;
-
-/**
- * Pre-launcher do Half-Force: tela inicial com botao Play, links (GitHub, YouTube, Discord)
- * e uma janela "Apoie-me" com as carteiras de USDT.
- * Nao depende de nenhum recurso (layout, drawable) nem de AndroidX: tudo e criado em codigo.
- */
 public class MainActivity extends Activity {
 
-    // ---------------------------------------------------------------- configuracao
     private static final String GAMEDIR = "half-force-v2.0";
-    private static final String GAME_ARGS = "-dev 2 -log";   // deixe "" para nao passar argumentos
+    private static final String PREFS_NAME = "half_force_settings";
+    private static final String PREF_GAME_ARGS = "game_arguments";
+    private static final String DEFAULT_GAME_ARGS = "-console -log";
+
+    private EditText gameArgsInput;
+
     private static final String MOD_VERSION = "2.0";
 
     private static final String URL_GITHUB = "https://github.com/KaliKylee/half-force";
@@ -55,33 +53,27 @@ public class MainActivity extends Activity {
     private static final String URL_DISCORD = "https://discord.gg/fUnXU4RZgn";
     private static final String URL_ENGINE = "https://github.com/FWGS/xash3d-fwgs/releases/tag/continuous";
 
-    // {rede, endereco}
     private static final String[][] WALLETS = {
         {"USDT  \u2022  Polygon", "0xe3c825c7eF4a3609E66b5D92C671d5C23dE78368"},
         {"USDT  \u2022  Ethereum", "0xe3c825c7eF4a3609E66b5D92C671d5C23dE78368"},
         {"USDT  \u2022  Solana", "G8br5Hgu9jSV1d84g7LfeNMBDJYRwwhntBBebA52QdLk"},
     };
 
-    // ---------------------------------------------------------------- cores
-    private static final int BG = 0xFF0F1011;          // fundo
-    private static final int PANEL = 0xFF171A18;       // paineis
-    private static final int RED = 0xFFC93C3C;         // textos principais (vermelho nao muito claro)
-    private static final int RED_DARK = 0xFF6E2222;    // preenchimento do botao Play
-    private static final int GREEN = 0xFF3F9A63;       // textos secundarios (verde escuro)
-    private static final int GREEN_DEEP = 0xFF1F5A38;  // bordas
+    private static final int BG = 0xFF0F1011;
+    private static final int PANEL = 0xFF171A18;
+    private static final int RED = 0xFFC93C3C;
+    private static final int RED_DARK = 0xFF6E2222;
+    private static final int GREEN = 0xFF3F9A63;
+    private static final int GREEN_DEEP = 0xFF1F5A38;
 
     private static final String ACTION_MOD = "su.xash.engine.MOD";
-    private static final String PREFS = "half_force_settings";
-    private static final String PREF_LANGUAGE = "language";
-    private String language;
 
-    // ---------------------------------------------------------------- ciclo de vida
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Quando o proprio Xash3D chama este app pelo menu de mods, entra direto no jogo.
         Intent in = getIntent();
+
         if (in != null && ACTION_MOD.equals(in.getAction())) {
             launchGame();
             return;
@@ -93,59 +85,9 @@ public class MainActivity extends Activity {
             w.setNavigationBarColor(BG);
         }
 
-        language = getSelectedLanguage();
         setContentView(buildUi());
     }
 
-    private String getSelectedLanguage() {
-        String saved = getSharedPreferences(PREFS, MODE_PRIVATE).getString(PREF_LANGUAGE, "system");
-        if (!"system".equals(saved)) return saved;
-        String device = Locale.getDefault().getLanguage();
-        if ("pt".equals(device)) return "pt";
-        if ("es".equals(device)) return "es";
-        return "en";
-    }
-
-    private String s(String key) {
-        boolean pt = "pt".equals(language);
-        boolean es = "es".equals(language);
-        if ("play".equals(key)) return "PLAY";
-        if ("version".equals(key)) return pt ? "VERSÃO " + MOD_VERSION : (es ? "VERSIÓN " : "VERSION ") + MOD_VERSION;
-        if ("language".equals(key)) return pt ? "IDIOMA: PORTUGUÊS ▾" : (es ? "IDIOMA: ESPAÑOL ▾" : "LANGUAGE: ENGLISH ▾");
-        if ("support".equals(key)) return pt ? "APOIE-ME" : (es ? "APÓYAME" : "SUPPORT ME");
-        if ("credit".equals(key)) return "Port by Kali Kyle";
-        if ("engine_required".equals(key)) return pt ? "Requer o app Xash3D FWGS instalado" : (es ? "Requiere tener instalada la app Xash3D FWGS" : "Requires the Xash3D FWGS app to be installed");
-        if ("support_title".equals(key)) return pt ? "APOIE O PROJETO" : (es ? "APOYA EL PROYECTO" : "SUPPORT THE PROJECT");
-        if ("support_note".equals(key)) return pt ? "Envie somente USDT pela rede indicada e confira o endereço antes de enviar. Obrigado por apoiar!" : (es ? "Envía únicamente USDT por la red indicada y verifica la dirección antes de enviar. ¡Gracias por apoyar!" : "Send USDT only through the indicated network and check the address before sending. Thanks for your support!");
-        if ("copy".equals(key)) return pt ? "COPIAR" : (es ? "COPIAR" : "COPY");
-        if ("close".equals(key)) return pt ? "Fechar" : (es ? "Cerrar" : "Close");
-        if ("copied".equals(key)) return pt ? "Endereço copiado" : (es ? "Dirección copiada" : "Address copied");
-        if ("install_engine".equals(key)) return pt ? "Instale o Xash3D FWGS para jogar" : (es ? "Instala Xash3D FWGS para jugar" : "Install Xash3D FWGS to play");
-        if ("launch_error".equals(key)) return pt ? "Não foi possível abrir o Xash3D FWGS" : (es ? "No se pudo abrir Xash3D FWGS" : "Could not open Xash3D FWGS");
-        if ("no_link_app".equals(key)) return pt ? "Nenhum app para abrir o link" : (es ? "No hay ninguna app para abrir el enlace" : "No app available to open this link");
-        if ("choose_language".equals(key)) return pt ? "Escolha o idioma" : (es ? "Elige el idioma" : "Choose language");
-        if ("system_language".equals(key)) return pt ? "Automático (sistema)" : (es ? "Automático (sistema)" : "Automatic (system)");
-        return key;
-    }
-
-    private void showLanguageDialog() {
-        final String[] values = {"system", "pt", "en", "es"};
-        final String[] labels = {s("system_language"), "Português (Brasil)", "English", "Español"};
-        String selected = getSharedPreferences(PREFS, MODE_PRIVATE).getString(PREF_LANGUAGE, "system");
-        int checked = 0;
-        for (int i = 0; i < values.length; i++) if (values[i].equals(selected)) checked = i;
-        new AlertDialog.Builder(this)
-                .setTitle(s("choose_language"))
-                .setSingleChoiceItems(labels, checked, (dialog, which) -> {
-                    getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(PREF_LANGUAGE, values[which]).apply();
-                    dialog.dismiss();
-                    recreate();
-                })
-                .setNegativeButton(s("close"), null)
-                .show();
-    }
-
-    // ---------------------------------------------------------------- jogo
     private void launchGame() {
         String pkg = "su.xash.engine.test";
 
@@ -156,7 +98,7 @@ public class MainActivity extends Activity {
                 pkg = "su.xash.engine";
                 getPackageManager().getPackageInfo(pkg, 0);
             } catch (PackageManager.NameNotFoundException ex) {
-                Toast.makeText(this, s("install_engine"), Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Instale o Xash3D FWGS para jogar", Toast.LENGTH_LONG).show();
                 openUrl(URL_ENGINE);
                 return;
             }
@@ -165,18 +107,35 @@ public class MainActivity extends Activity {
         Intent game = new Intent();
         game.setComponent(new ComponentName(pkg, "su.xash.engine.XashActivity"));
         game.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
         game.putExtra("gamedir", GAMEDIR);
         game.putExtra("gamelibdir", getApplicationInfo().nativeLibraryDir);
         game.putExtra("package", getPackageName());
-        if (GAME_ARGS.length() > 0) {
-            game.putExtra("argv", GAME_ARGS);
+
+        String gameArgs;
+
+        if (gameArgsInput != null) {
+            gameArgs = gameArgsInput.getText().toString().trim();
+
+            getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                    .edit()
+                    .putString(PREF_GAME_ARGS, gameArgs)
+                    .apply();
+
+        } else {
+            gameArgs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                    .getString(PREF_GAME_ARGS, DEFAULT_GAME_ARGS);
+        }
+
+        if (!gameArgs.isEmpty()) {
+            game.putExtra("argv", gameArgs);
         }
 
         try {
             startActivity(game);
             finish();
         } catch (ActivityNotFoundException e) {
-            Toast.makeText(this, s("launch_error"), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Nao foi possivel abrir o Xash3D FWGS", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -184,21 +143,27 @@ public class MainActivity extends Activity {
         try {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
         } catch (ActivityNotFoundException e) {
-            Toast.makeText(this, s("no_link_app"), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Nenhum app para abrir o link", Toast.LENGTH_SHORT).show();
         }
     }
 
-    // ---------------------------------------------------------------- interface
     private View buildUi() {
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(BG);
 
-        // com targetSdk alto o app desenha atras das barras do sistema: afasta o conteudo
+        // evita que o campo de argumentos pegue o foco e abra o teclado sozinho
+        root.setFocusableInTouchMode(true);
+        root.requestFocus();
+
         root.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
             @Override
             public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
-                v.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
-                        insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+                v.setPadding(
+                        insets.getSystemWindowInsetLeft(),
+                        insets.getSystemWindowInsetTop(),
+                        insets.getSystemWindowInsetRight(),
+                        insets.getSystemWindowInsetBottom()
+                );
                 return insets;
             }
         });
@@ -206,12 +171,18 @@ public class MainActivity extends Activity {
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
         scroll.setVerticalScrollBarEnabled(false);
+
         root.addView(scroll, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
 
         FrameLayout holder = new FrameLayout(this);
+
         scroll.addView(holder, new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
 
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
@@ -219,94 +190,160 @@ public class MainActivity extends Activity {
         col.setPadding(dp(20), dp(24), dp(20), dp(24));
 
         int width = getResources().getDisplayMetrics().widthPixels - dp(16);
+
         if (width > dp(460)) {
             width = dp(460);
         }
-        FrameLayout.LayoutParams colLp = new FrameLayout.LayoutParams(width,
-                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+
+        FrameLayout.LayoutParams colLp = new FrameLayout.LayoutParams(
+                width,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER
+        );
+
         holder.addView(col, colLp);
 
-        // titulo
         TextView title = text("HALF-FORCE", 40, RED, true);
         title.setLetterSpacing(0.12f);
         title.setGravity(Gravity.CENTER);
         col.addView(title, wrap());
 
-        TextView version = text(s("version"), 15, GREEN, true);
+        TextView version = text("VERS\u00c3O " + MOD_VERSION, 15, GREEN, true);
         version.setLetterSpacing(0.3f);
         version.setGravity(Gravity.CENTER);
+
         LinearLayout.LayoutParams vLp = wrap();
         vLp.topMargin = dp(2);
         col.addView(version, vLp);
 
-        TextView languageButton = text(s("language"), 11, GREEN, true);
-        languageButton.setGravity(Gravity.CENTER);
-        languageButton.setPadding(dp(14), dp(8), dp(14), dp(8));
-        languageButton.setBackground(ripple(box(PANEL, GREEN_DEEP, 1, 10)));
-        languageButton.setOnClickListener(v -> showLanguageDialog());
-        LinearLayout.LayoutParams languageLp = wrap();
-        languageLp.topMargin = dp(14);
-        col.addView(languageButton, languageLp);
-
         View line = new View(this);
         line.setBackgroundColor(GREEN_DEEP);
+
         LinearLayout.LayoutParams lineLp = new LinearLayout.LayoutParams(dp(120), dp(2));
         lineLp.topMargin = dp(18);
         lineLp.bottomMargin = dp(26);
         col.addView(line, lineLp);
 
-        // botao Play
         TextView play = text("PLAY", 24, RED, true);
         play.setLetterSpacing(0.25f);
         play.setGravity(Gravity.CENTER);
         play.setBackground(ripple(box(RED_DARK, RED, 2, 14)));
+
         play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 launchGame();
             }
         });
+
         LinearLayout.LayoutParams playLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(64));
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(64)
+        );
+
         col.addView(play, playLp);
 
-        // links
+        // ARGUMENTOS DE INICIALIZACAO
+
+        TextView argsLabel = text("ARGUMENTOS DE INICIALIZA\u00c7\u00c3O", 12, GREEN, true);
+        argsLabel.setLetterSpacing(0.08f);
+
+        LinearLayout.LayoutParams argsLabelLp = wrap();
+        argsLabelLp.topMargin = dp(16);
+        col.addView(argsLabel, argsLabelLp);
+
+        gameArgsInput = new EditText(this);
+        gameArgsInput.setSingleLine(true);
+        gameArgsInput.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        gameArgsInput.setTextColor(0xFFE8E8E8);
+        gameArgsInput.setHintTextColor(0xFF858585);
+        gameArgsInput.setHint("-console -log");
+
+        gameArgsInput.setText(
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                        .getString(PREF_GAME_ARGS, DEFAULT_GAME_ARGS)
+        );
+
+        gameArgsInput.setPadding(dp(14), dp(12), dp(14), dp(12));
+        gameArgsInput.setBackground(box(PANEL, GREEN_DEEP, 1, 10));
+
+        LinearLayout.LayoutParams argsInputLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(50)
+        );
+
+        argsInputLp.topMargin = dp(8);
+        col.addView(gameArgsInput, argsInputLp);
+
+        TextView argsHint = text(
+                "Personalize os par\u00e2metros enviados ao Xash3D FWGS.",
+                11, GREEN, false
+        );
+
+        LinearLayout.LayoutParams argsHintLp = wrap();
+        argsHintLp.topMargin = dp(5);
+        col.addView(argsHint, argsHintLp);
+
+        // LINKS
+
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
+
         LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+
         rowLp.topMargin = dp(18);
         col.addView(row, rowLp);
 
-        row.addView(linkButton(new PolyIcon(GITHUB, GREEN, dp(30)), "GitHub", URL_GITHUB), cell(false));
-        row.addView(linkButton(new YouTubeIcon(GREEN, dp(30)), "YouTube", URL_YOUTUBE), cell(true));
-        row.addView(linkButton(new PolyIcon(DISCORD, GREEN, dp(30)), "Discord", URL_DISCORD), cell(true));
+        row.addView(
+                linkButton(new PolyIcon(GITHUB, GREEN, dp(30)), "GitHub", URL_GITHUB),
+                cell(false)
+        );
 
-        // apoie-me
-        TextView support = text(s("support"), 16, GREEN, true);
+        row.addView(
+                linkButton(new YouTubeIcon(GREEN, dp(30)), "YouTube", URL_YOUTUBE),
+                cell(true)
+        );
+
+        row.addView(
+                linkButton(new PolyIcon(DISCORD, GREEN, dp(30)), "Discord", URL_DISCORD),
+                cell(true)
+        );
+
+        // APOIE-ME
+
+        TextView support = text("APOIE-ME", 16, GREEN, true);
         support.setLetterSpacing(0.2f);
         support.setGravity(Gravity.CENTER);
         support.setBackground(ripple(box(PANEL, GREEN_DEEP, 2, 14)));
+
         support.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 showSupportDialog();
             }
         });
+
         LinearLayout.LayoutParams supLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(52));
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(52)
+        );
+
         supLp.topMargin = dp(12);
         col.addView(support, supLp);
 
-        // creditos
         TextView credit = text("Port by Kali Kyle", 14, RED, false);
         credit.setGravity(Gravity.CENTER);
+
         LinearLayout.LayoutParams crLp = wrap();
         crLp.topMargin = dp(30);
         col.addView(credit, crLp);
 
-        TextView hint = text(s("engine_required"), 12, GREEN, false);
+        TextView hint = text("Requer o app Xash3D FWGS instalado", 12, GREEN, false);
         hint.setGravity(Gravity.CENTER);
+
         LinearLayout.LayoutParams hintLp = wrap();
         hintLp.topMargin = dp(4);
         col.addView(hint, hintLp);
@@ -323,10 +360,12 @@ public class MainActivity extends Activity {
 
         ImageView iv = new ImageView(this);
         iv.setImageDrawable(icon);
+
         b.addView(iv, new LinearLayout.LayoutParams(dp(30), dp(30)));
 
         TextView t = text(label, 12, GREEN, true);
         t.setGravity(Gravity.CENTER);
+
         LinearLayout.LayoutParams tLp = wrap();
         tLp.topMargin = dp(6);
         b.addView(t, tLp);
@@ -337,29 +376,40 @@ public class MainActivity extends Activity {
                 openUrl(url);
             }
         });
+
         return b;
     }
 
     private LinearLayout.LayoutParams cell(boolean leftMargin) {
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f
+        );
+
         if (leftMargin) {
             lp.leftMargin = dp(10);
         }
+
         return lp;
     }
 
-    // ---------------------------------------------------------------- janela "Apoie-me"
+    // JANELA APOIE-ME
+
     private void showSupportDialog() {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(dp(20), dp(20), dp(20), dp(16));
 
-        TextView title = text(s("support_title"), 18, RED, true);
+        TextView title = text("APOIE O PROJETO", 18, RED, true);
         title.setLetterSpacing(0.15f);
         box.addView(title, wrap());
 
-        TextView note = text(s("support_note"), 13, GREEN, false);
+        TextView note = text(
+                "Envie somente USDT pela rede indicada e confira o endere\u00e7o antes de enviar. Obrigado por apoiar!",
+                13, GREEN, false
+        );
+
         LinearLayout.LayoutParams noteLp = wrap();
         noteLp.topMargin = dp(8);
         noteLp.bottomMargin = dp(8);
@@ -379,61 +429,82 @@ public class MainActivity extends Activity {
             TextView addr = text(address, 12, GREEN, false);
             addr.setTypeface(Typeface.MONOSPACE);
             addr.setTextIsSelectable(true);
+
             LinearLayout.LayoutParams addrLp = wrap();
             addrLp.topMargin = dp(6);
             card.addView(addr, addrLp);
 
-            TextView copy = text(s("copy"), 13, RED, true);
+            TextView copy = text("COPIAR", 13, RED, true);
             copy.setLetterSpacing(0.2f);
             copy.setGravity(Gravity.CENTER);
             copy.setBackground(ripple(box(0x00000000, RED, 2, 10)));
+
             copy.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     copyToClipboard(label, address);
                 }
             });
+
             LinearLayout.LayoutParams copyLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, dp(40));
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    dp(40)
+            );
+
             copyLp.topMargin = dp(10);
             card.addView(copy, copyLp);
 
             LinearLayout.LayoutParams cardLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+
             cardLp.topMargin = dp(8);
             box.addView(card, cardLp);
         }
 
         ScrollView sv = new ScrollView(this);
+
         sv.addView(box, new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(sv)
-                .setPositiveButton(s("close"), null)
+                .setPositiveButton("Fechar", null)
                 .create();
+
         dialog.getWindow().setBackgroundDrawable(box(BG, GREEN_DEEP, 2, 18));
         dialog.show();
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(GREEN);
     }
 
     private void copyToClipboard(String label, String address) {
-        ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipboardManager cm = (ClipboardManager)
+                getSystemService(Context.CLIPBOARD_SERVICE);
+
         if (cm != null) {
             cm.setPrimaryClip(ClipData.newPlainText(label, address));
-            Toast.makeText(this, s("copied"), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Endere\u00e7o copiado", Toast.LENGTH_SHORT).show();
         }
     }
 
-    // ---------------------------------------------------------------- utilidades de UI
+    // UTILIDADES
+
     private int dp(int v) {
-        return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v,
-                getResources().getDisplayMetrics()));
+        return Math.round(TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                v,
+                getResources().getDisplayMetrics()
+        ));
     }
 
     private LinearLayout.LayoutParams wrap() {
-        return new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
+        return new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
     }
 
     private TextView text(String s, int sp, int color, boolean bold) {
@@ -455,11 +526,15 @@ public class MainActivity extends Activity {
     }
 
     private Drawable ripple(Drawable content) {
-        return new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), content, null);
+        return new RippleDrawable(
+                ColorStateList.valueOf(0x33FFFFFF),
+                content,
+                null
+        );
     }
 
-    // ---------------------------------------------------------------- icones (desenhados em codigo)
-    // Glifos 24x24 do Simple Icons (dominio publico, CC0). Cada linha e um contorno (preenchimento par-impar).
+    // ICONES
+
     private static final float[][] DISCORD = {
         {20.32f, 4.37f, 19.73f, 4.11f, 19.14f, 3.87f, 18.53f, 3.65f, 17.92f, 3.45f, 17.31f, 3.27f, 16.69f, 3.11f, 16.06f, 2.97f, 15.43f, 2.85f, 15.41f, 2.85f, 15.39f, 2.86f, 15.36f, 2.88f, 15.22f, 3.13f, 15.10f, 3.38f, 14.97f, 3.64f, 14.85f, 3.90f, 14.75f, 4.14f, 13.64f, 4.01f, 12.54f, 3.94f, 11.44f, 3.94f, 10.35f, 4.01f, 9.26f, 4.14f, 9.15f, 3.90f, 9.03f, 3.64f, 8.90f, 3.38f, 8.77f, 3.13f, 8.64f, 2.89f, 8.62f, 2.87f, 8.60f, 2.86f, 8.57f, 2.85f, 7.93f, 2.97f, 7.31f, 3.11f, 6.69f, 3.27f, 6.07f, 3.45f, 5.46f, 3.65f, 4.86f, 3.87f, 4.26f, 4.11f, 3.68f, 4.37f, 3.65f, 4.38f, 2.04f, 7.17f, 0.93f, 9.92f, 0.27f, 12.65f, 0.01f, 15.36f, 0.10f, 18.06f, 0.11f, 18.08f, 0.12f, 18.10f, 1.35f, 18.95f, 2.56f, 19.66f, 3.76f, 20.25f, 4.95f, 20.74f, 6.12f, 21.14f, 6.15f, 21.15f, 6.17f, 21.14f, 6.19f, 21.13f, 6.48f, 20.73f, 6.74f, 20.34f, 6.98f, 19.94f, 7.21f, 19.54f, 7.43f, 19.12f, 7.44f, 19.09f, 7.44f, 19.06f, 7.42f, 19.03f, 7.39f, 19.02f, 7.00f, 18.86f, 6.62f, 18.69f, 6.25f, 18.51f, 5.88f, 18.32f, 5.52f, 18.12f, 5.49f, 18.10f, 5.48f, 18.06f, 5.49f, 18.02f, 5.51f, 18.00f, 5.59f, 17.94f, 5.66f, 17.88f, 5.74f, 17.82f, 5.81f, 17.76f, 5.88f, 17.70f, 5.91f, 17.69f, 5.93f, 17.69f, 5.95f, 17.69f, 8.35f, 18.55f, 10.79f, 18.99f, 13.23f, 18.99f, 15.66f, 18.55f, 18.02f, 17.69f, 18.05f, 17.69f, 18.07f, 17.69f, 18.10f, 17.70f, 18.17f, 17.76f, 18.25f, 17.82f, 18.32f, 17.88f, 18.40f, 17.94f, 18.47f, 18.00f, 18.50f, 18.02f, 18.50f, 18.06f, 18.49f, 18.10f, 18.47f, 18.12f, 18.24f, 18.25f, 18.01f, 18.38f, 17.78f, 18.49f, 17.55f, 18.61f, 17.31f, 18.72f, 17.08f, 18.82f, 16.84f, 18.92f, 16.59f, 19.01f, 16.57f, 19.03f, 16.55f, 19.06f, 16.55f, 19.09f, 16.55f, 19.12f, 16.78f, 19.54f, 17.01f, 19.94f, 17.26f, 20.34f, 17.51f, 20.73f, 17.78f, 21.11f, 17.81f, 21.14f, 17.83f, 21.15f, 17.85f, 21.15f, 19.04f, 20.74f, 20.23f, 20.25f, 21.43f, 19.66f, 22.64f, 18.95f, 23.87f, 18.11f, 23.89f, 18.09f, 23.90f, 18.07f, 23.98f, 15.03f, 23.64f, 12.16f, 22.91f, 9.44f, 21.81f, 6.85f, 20.35f, 4.40f, 20.33f, 4.38f},
         {8.02f, 15.33f, 7.34f, 15.21f, 6.75f, 14.86f, 6.28f, 14.34f, 5.97f, 13.68f, 5.86f, 12.91f, 5.97f, 12.15f, 6.28f, 11.48f, 6.74f, 10.96f, 7.33f, 10.62f, 8.02f, 10.49f, 8.71f, 10.62f, 9.31f, 10.96f, 9.77f, 11.49f, 10.08f, 12.15f, 10.18f, 12.91f, 10.07f, 13.68f, 9.76f, 14.34f, 9.30f, 14.86f, 8.71f, 15.21f, 8.02f, 15.33f},
@@ -490,15 +565,20 @@ public class MainActivity extends Activity {
             float s = Math.min(b.width(), b.height()) / 24f;
             float ox = b.left + (b.width() - 24f * s) / 2f;
             float oy = b.top + (b.height() - 24f * s) / 2f;
+
             path.reset();
+
             for (int i = 0; i < polys.length; i++) {
                 float[] p = polys[i];
                 path.moveTo(ox + p[0] * s, oy + p[1] * s);
+
                 for (int k = 2; k + 1 < p.length; k += 2) {
                     path.lineTo(ox + p[k] * s, oy + p[k + 1] * s);
                 }
+
                 path.close();
             }
+
             canvas.drawPath(path, paint);
         }
 
@@ -509,7 +589,6 @@ public class MainActivity extends Activity {
         @Override public int getOpacity() { return PixelFormat.TRANSLUCENT; }
     }
 
-    /** Retangulo arredondado com triangulo vazado (estilo botao de video). */
     private static class YouTubeIcon extends Drawable {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final int size;
@@ -528,13 +607,21 @@ public class MainActivity extends Activity {
             float s = Math.min(b.width(), b.height()) / 24f;
             float ox = b.left + (b.width() - 24f * s) / 2f;
             float oy = b.top + (b.height() - 24f * s) / 2f;
+
             path.reset();
-            path.addRoundRect(ox + 1f * s, oy + 4.5f * s, ox + 23f * s, oy + 19.5f * s,
-                    4.5f * s, 4.5f * s, Path.Direction.CW);
+
+            path.addRoundRect(
+                    ox + 1f * s, oy + 4.5f * s,
+                    ox + 23f * s, oy + 19.5f * s,
+                    4.5f * s, 4.5f * s,
+                    Path.Direction.CW
+            );
+
             path.moveTo(ox + 9.75f * s, oy + 8.6f * s);
             path.lineTo(ox + 15.75f * s, oy + 12f * s);
             path.lineTo(ox + 9.75f * s, oy + 15.4f * s);
             path.close();
+
             canvas.drawPath(path, paint);
         }
 
