@@ -555,6 +555,16 @@ private:
 //-----------------------------------------------------
 //
 #define ARMOR_PAIN_TIME			0.2
+class CHudCredit : public CHudBase
+{
+public:
+	int Init( void );
+	int VidInit( void );
+	int Draw( float flTime );
+private:
+	float m_flStart;
+};
+
 wrect_t CreateWrect ( int left, int top, int right, int bottom );
 
 class CHudBossBarHealth : public CHudBase
@@ -749,6 +759,7 @@ public:
 	CHudTextMessage m_TextMessage;
 	CHudStatusIcons m_StatusIcons;
 	CHudBossBarHealth m_HudBossBarHealth; // BOSSBARHEALTH
+	CHudCredit m_HudCredit; // PORT CREDIT
 	CHudBossBarHealthName m_HudBossBarHealthName; // BOSSBARNAME
 	CHudBossBarHealthName2 m_HudBossBarHealthName2; // BOSSBARNAME2
 	CHudBossBarHealthName3 m_HudBossBarHealthName3; // BOSSBARNAME3
