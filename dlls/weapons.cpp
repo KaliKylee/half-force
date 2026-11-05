@@ -21,6 +21,7 @@
 */
 
 #include "extdll.h"
+#include "hf_log.h"
 #include "util.h"
 #include "cbase.h"
 #include "player.h"
@@ -257,6 +258,8 @@ void AddAmmoNameToAmmoRegistry( const char *szAmmoname )
 void UTIL_PrecacheOtherWeapon( const char *szClassname )
 {
 	edict_t	*pent;
+
+	HF_Breadcrumb( "precache weapon %s", szClassname );
 
 	pent = CREATE_NAMED_ENTITY( MAKE_STRING( szClassname ) );
 	if( FNullEnt( pent ) )

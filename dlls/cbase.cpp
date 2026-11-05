@@ -14,6 +14,7 @@
 ****/
 
 #include	"extdll.h"
+#include "hf_log.h"
 #include	"util.h"
 #include	"cbase.h"
 #include	"saverestore.h"
@@ -146,6 +147,7 @@ int DispatchSpawn( edict_t *pent )
 		pEntity->pev->absmin = pEntity->pev->origin - Vector( 1.0f, 1.0f, 1.0f );
 		pEntity->pev->absmax = pEntity->pev->origin + Vector( 1.0f, 1.0f, 1.0f );
 
+		HF_Breadcrumb( "spawn %s (%s) idx=%d", STRING( pEntity->pev->classname ), STRING( pEntity->pev->model ), ENTINDEX( pent ) );
 		pEntity->Spawn();
 
 		// Try to get the pointer again, in case the spawn function deleted the entity.

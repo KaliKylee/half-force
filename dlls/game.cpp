@@ -13,6 +13,7 @@
 *
 ****/
 #include "extdll.h"
+#include "hf_log.h"
 #include "eiface.h"
 #include "util.h"
 #include "game.h"
@@ -745,6 +746,8 @@ cvar_t sv_busters = { "sv_busters", "0" };
 // This gets called one time when the game is initialied
 void GameDLLInit( void )
 {
+	HF_Log( "GameDLLInit" );
+
 	g_psv_gravity = CVAR_GET_POINTER( "sv_gravity" );
 	g_psv_aim = CVAR_GET_POINTER( "sv_aim" );
 	g_psv_allow_autoaim = CVAR_GET_POINTER( "sv_allow_autoaim" );

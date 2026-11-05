@@ -55,6 +55,7 @@ set (SVDLL_SOURCES
 	gearbox/drillsergeant.cpp
 	gearbox/eagle.cpp
 	gearbox/deagle.cpp
+	hf_crash.cpp
 	gearbox/chaingun.cpp
 	gearbox/glauncher.cpp
 	gearbox/handgrenadegas.cpp
@@ -238,6 +239,9 @@ endif()
 
 add_library (${SVDLL_LIBRARY} SHARED ${SVDLL_SOURCES})
 target_link_libraries(${SVDLL_LIBRARY} vcs_info)
+if(ANDROID)
+	target_link_libraries(${SVDLL_LIBRARY} log)
+endif()
 
 set_target_properties (${SVDLL_LIBRARY} PROPERTIES POSITION_INDEPENDENT_CODE 1)
 

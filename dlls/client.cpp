@@ -24,6 +24,7 @@
 */
 
 #include "extdll.h"
+#include "hf_log.h"
 #include "util.h"
 #include "cbase.h"
 #include "saverestore.h"
@@ -193,6 +194,8 @@ void ClientPutInServer( edict_t *pEntity )
 	CBasePlayer *pPlayer;
 
 	entvars_t *pev = &pEntity->v;
+
+	HF_Log( "ClientPutInServer: jogador entrou (mapa %s)", STRING( gpGlobals->mapname ) );
 
 	pPlayer = GetClassPtr( (CBasePlayer *)pev );
 	pPlayer->SetCustomDecalFrames( -1 ); // Assume none;
@@ -711,6 +714,7 @@ static int g_serveractive = 0;
 void ServerDeactivate( void )
 {
 	//ALERT( at_console, "ServerDeactivate()\n" );
+	HF_Log( "ServerDeactivate" );
 
 	// It's possible that the engine will call this function more times than is necessary
 	//  Therefore, only run it one time for each call to ServerActivate 
@@ -731,6 +735,7 @@ void ServerActivate( edict_t *pEdictList, int edictCount, int clientMax )
 	CBaseEntity	*pClass;
 
 	//ALERT( at_console, "ServerActivate()\n" );
+	HF_Log( "ServerActivate: mapa=%s clientMax=%d edicts=%d", STRING( gpGlobals->mapname ), clientMax, edictCount );
 
 	// Every call to ServerActivate should be matched by a call to ServerDeactivate
 	g_serveractive = 1;
