@@ -2,7 +2,8 @@ name: Build Half-Force (Android)
 
 on:
   workflow_dispatch:
-  
+    branches: [ main, master ]
+
 jobs:
   android:
     runs-on: ubuntu-latest
@@ -51,10 +52,26 @@ jobs:
           unzip -o -q dist/*.apk 'lib/*' -d dist/apk-libs || true
           find dist/apk-libs -name '*.so' | sort
 
+      - name: Collect libs with symbols (for crash analysis)
+        run: |
+          mkdir -p dist/symbols
+          for f in $(find android/app/build/intermediates -path '*cxx*' -path '*/obj/*' -name '*.so' 2>/dev/null); do
+            abi=$(basename "$(dirname "$f")")
+            mkdir -p "dist/symbols/$abi"
+            cp "$f" "dist/symbols/$abi/"
+          done
+          find dist/symbols -type f | sort
+
+      - name: Upload libs with symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalfForce-libs-symbols
+          path: dist/symbols
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Half-Force-apk
+          name: HalfForceLauncher-apk
           path: dist/*.apk
 
       - name: Upload native libs
