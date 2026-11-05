@@ -76,6 +76,7 @@ set (CLDLL_SOURCES
 	../dlls/gearbox/knife.cpp
 	../dlls/gearbox/eagle.cpp
 	../dlls/gearbox/deagle.cpp
+	../dlls/hf_crash.cpp
 	../dlls/gearbox/chaingun.cpp
 	../dlls/gearbox/glauncher.cpp
 	../dlls/gearbox/handgrenadegas.cpp
@@ -114,6 +115,7 @@ set (CLDLL_SOURCES
 	hud_healthbarbossname.cpp
 	hud_healthbarbossname2.cpp
 	hud_healthbarbossname3.cpp
+	hud_credit.cpp
 	hud_spectator.cpp
 	hud_update.cpp
 	in_camera.cpp
@@ -191,6 +193,9 @@ include_directories(../utils/vgui/include)
 
 add_library (${CLDLL_LIBRARY} SHARED ${CLDLL_SOURCES})
 target_link_libraries(${CLDLL_LIBRARY} vcs_info)
+if(ANDROID)
+	target_link_libraries(${CLDLL_LIBRARY} log)
+endif()
 
 if (GOLDSOURCE_SUPPORT)
 	target_link_libraries( ${CLDLL_LIBRARY} ${CMAKE_DL_LIBS} )
